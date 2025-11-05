@@ -6,16 +6,47 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [result, setResult] = useState(null)
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     if (!proteinText.trim()) return
     setIsSubmitting(true)
-    // Placeholder inference; replace with real backend call later
-    // Simulate a short delay for UX
-    setTimeout(() => {
-      setResult({ label: 'AMP', confidence: 98.0 })
+    setResult(null)
+    
+    try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'https://amp-classifier.onrender.com'
+      const response = await fetch(`${apiUrl}/predict`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ seq: proteinText.trim() }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      if (data.results && data.results.length > 0) {
+        const result = data.results[0]
+        setResult({
+          label: result.prediction,
+          confidence: result.confidence ? (result.confidence * 100).toFixed(1) : null,
+          cleaned: result.cleaned,
+        })
+      } else {
+        throw new Error('No results returned from API')
+      }
+    } catch (error) {
+      setResult({
+        label: 'Error',
+        confidence: null,
+        error: error.message,
+      })
+    } finally {
       setIsSubmitting(false)
-    }, 400)
+    }
   }
 
   return (
@@ -50,7 +81,19 @@ function App() {
 
           {result && (
             <div className="result" role="status">
-              result: {result.label}, Confidence: {result.confidence}
+              {result.error ? (
+                <div className="error">Error: {result.error}</div>
+              ) : (
+                <>
+                  <div className="prediction">Result: {result.label}</div>
+                  {result.confidence && (
+                    <div className="confidence">Confidence: {result.confidence}%</div>
+                  )}
+                  {result.cleaned && result.cleaned !== proteinText.trim() && (
+                    <div className="cleaned">Cleaned sequence: {result.cleaned}</div>
+                  )}
+                </>
+              )}
             </div>
           )}
 

@@ -1,14 +1,12 @@
 flask==3.0.3
 flask-cors==4.0.0
-
-# For local dev on Windows you'll run `python app.py` (gunicorn is for Render/Linux)
 gunicorn==21.2.0
 
+# ML stack (NumPy 2 + SciPy 1.14 have wheels)
 numpy==2.1.2
-pandas==2.2.3
+scipy==1.14.1
 scikit-learn==1.5.2
-scipy==1.13.1
 joblib==1.4.2
+pandas==2.2.3
 
-# Use an available version:
 protpy==1.2.1
